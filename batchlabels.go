@@ -40,33 +40,36 @@ repo must be given in username/reponame format
 // Regexp to match repository: username/reponame
 var repoRegexp = regexp.MustCompile(`^([^/]+)/([^/]+)$`)
 
+// Issue Label
 type Label struct {
-	color string
-	name string
+	Color string
+	Name string
 }
 
+// Repository Issue
 type Issue struct {
-	id string
-	labels []Label
+	ID string
+	Labels []Label
 }
 
+// Repository
 type Repo struct {
-	owner string
-	name string
-	issues []Issue
+	Owner string
+	Name string
+	Issues []Issue
 }
 
-func (r Repo) String() string {
-	var b strings.Builder
-	b.WriteString(r.owner)
+// func (r Repo) String() string {
+// 	var b strings.Builder
+// 	b.WriteString(r.Owner)
 
-	if r.name != "" {
-		b.WriteString("/")
-		b.WriteString(r.name)
-	}
+// 	if r.Name != "" {
+// 		b.WriteString("/")
+// 		b.WriteString(r.Name)
+// 	}
 
-	return b.String()
-}
+// 	return b.String()
+// }
 
 
 func githubClient(auth string) *github.Client {
@@ -82,23 +85,27 @@ func githubClient(auth string) *github.Client {
 
 func addLabels(gh *github.Client, repos []Repo)  {
 	for _, repo := range(repos) {
-		for _, issue := range(repo.issues) {
-			if issue.id != allIssues {
+		for _, issue := range(repo.Issues) {
+			if issue.ID != allIssues {
 				addLabelToIssue(gh, repo, issue)
 			} else {
-				// Not Yet!
-				// var ids []string
-				// for id := range(ids) {
-				// 	issue.id = id // string
-				// 	addLabelToIssue(issue)
-				// }
+				ctx := context.Background()
+				issues, _, err := gh.Issues.ListByRepo(ctx, repo.Owner, repo.Name, &github.IssueListByRepoOptions{State: "open"})
+				if err != nil {
+					panic(fmt.Errorf("Cannot retrieve open issues for %s: %s\n", repo, err))
+				}
+
+				for _, i := range(issues) {
+					issue.ID = strconv.Itoa(*i.Number)
+					addLabelToIssue(gh, repo, issue)
+				}
 			}
 		}
 	}
 }
 
 func addLabelToIssue(gh *github.Client, repo Repo, issue Issue) {
-	id, err := strconv.Atoi(issue.id)
+	id, err := strconv.Atoi(issue.ID)
 	if err != nil {
 		panic(err)
 	}
@@ -106,26 +113,33 @@ func addLabelToIssue(gh *github.Client, repo Repo, issue Issue) {
 	var labels []string
 	ctx := context.Background()
 
-	for _, labelCfg := range(issue.labels) {
-		label := &github.Label{Color: &labelCfg.color, Name: &labelCfg.name}
+	for _, labelCfg := range(issue.Labels) {
+		label := &github.Label{Color: &labelCfg.Color, Name: &labelCfg.Name}
 
-		_, res, err := gh.Issues.CreateLabel(ctx, repo.owner, repo.name, label)
+		_, res, err := gh.Issues.CreateLabel(ctx, repo.Owner, repo.Name, label)
 		// Assume 422 means it already exists
 		if err != nil && res.StatusCode != 422 {
 			panic(fmt.Errorf("Cannot create label for %s: %s\n", repo, err))
 		}
 
-		labels = append(labels, labelCfg.name)
+		labels = append(labels, labelCfg.Name)
 	}
 
-	_, _, err = gh.Issues.AddLabelsToIssue(ctx, repo.owner, repo.name, id, labels)
+	_, _, err = gh.Issues.AddLabelsToIssue(ctx, repo.Owner, repo.Name, id, labels)
 	if err != nil {
 		panic(fmt.Errorf("Cannot to add labels to %s: %s\n", repo, err))
 	}
 }
 
 func removeLabels(gh *github.Client, repos []Repo)  {
-	fmt.Printf("Not removing labels: %+v\n", repos)
+	for _, repo := range(repos) {
+		for _, issue := range(repo.Issues) {
+			if issue.ID != allIssues {
+				addLabelToIssue(gh, repo, issue)
+			} else {
+			}
+		}
+	}
 }
 
 // parse user-supplied arguments and create Repo list
@@ -139,9 +153,9 @@ func buildRepoList(argv []string) []Repo {
 
 		// We have a repo
 		if parts != nil {
-			repo := Repo{owner: parts[1], name: parts[2]}
+			repo := Repo{Owner: parts[1], Name: parts[2]}
 			for id, labels := range(issues) {
-				repo.issues = append(repo.issues, Issue{id: id, labels: labels})
+				repo.Issues = append(repo.Issues, Issue{ID: id, Labels: labels})
 			}
 
 			repos = append(repos, repo)
@@ -157,13 +171,13 @@ func buildRepoList(argv []string) []Repo {
 
 		if len(tags) == 1 {
 			labels = createLabels(tags[0])
-			issues[allIssues] = labels
+			issues[allIssues] = append(issues[allIssues], labels...)
 		} else {
 			ids := strings.Split(tags[0], argListSep)
 			labels = createLabels(tags[1])
 
 			for _, id := range(ids) {
-				issues[id] = labels
+				issues[id] = append(issues[id], labels...)
 			}
 		}
 
@@ -179,9 +193,9 @@ func createLabels(s string) []Label {
 
 	for _, cfg := range(labelCfg) {
 		nameColor := strings.SplitN(cfg, argColorSep, 2)
-		label := Label{name: nameColor[0]}
+		label := Label{Name: nameColor[0]}
 		if len(nameColor) > 1 {
-			label.color = nameColor[1]
+			label.Color = nameColor[1]
 		}
 
 		labels = append(labels, label)
