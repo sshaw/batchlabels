@@ -18,6 +18,9 @@ const (
 	argColorSep = "#"
 	allIssues = "__ALL__"
 
+	commandAdd = "add"
+	commandRemove = "remove"
+
 	version = "v0.0.1"
 	userAgent = "Batch Labels " + version
 )
@@ -25,16 +28,18 @@ const (
 //    If label contains no issues it will be added to every open issue in its repo
 // or remove
 const usage = `batchlabels [-a auth] command label repo [commandN labelN repoN ...]
-Add/remove labels in batches to/from GitHub issues and pull requests.
+Add or remove labels in batches to/from GitHub issues and pull requests.
 
 Options
 -a --auth   repository auth token, defaults to the BATCHLABELS_AUTH_TOKEN environment var
 
-command must be add
+command must be add or remove.
 
-color is the hex color for the issue
+color is the hex color for the issue.
 label can be one of: label, label#color, issue:label#color or issue1,issue2:label1#color,label2#color
-repo must be given in username/reponame format
+repo must be given in username/reponame format.
+
+If no issues are given the labels are added or removed to/from all open issues.
 `
 
 // Regexp to match repository: username/reponame
@@ -89,10 +94,9 @@ func addLabels(gh *github.Client, repos []Repo)  {
 			if issue.ID != allIssues {
 				addLabelToIssue(gh, repo, issue)
 			} else {
-				ctx := context.Background()
-				issues, _, err := gh.Issues.ListByRepo(ctx, repo.Owner, repo.Name, &github.IssueListByRepoOptions{State: "open"})
+				issues, err := ListOpenIssues(gh, repo)
 				if err != nil {
-					panic(fmt.Errorf("Cannot retrieve open issues for %s: %s\n", repo, err))
+					panic(err)
 				}
 
 				for _, i := range(issues) {
@@ -131,18 +135,64 @@ func addLabelToIssue(gh *github.Client, repo Repo, issue Issue) {
 	}
 }
 
-func removeLabels(gh *github.Client, repos []Repo)  {
+func RemoveLabels(gh *github.Client, repos []Repo) error {
 	for _, repo := range(repos) {
 		for _, issue := range(repo.Issues) {
 			if issue.ID != allIssues {
-				addLabelToIssue(gh, repo, issue)
+				err := RemoveLabelsFromIssue(gh, repo, issue)
+				if err != nil {
+					return err
+				}
 			} else {
+				issues, err := ListOpenIssues(gh, repo)
+				if err != nil {
+					return err
+				}
+
+				for _, i := range(issues) {
+					issue.ID = strconv.Itoa(*i.Number)
+					err := RemoveLabelsFromIssue(gh, repo, issue)
+					if err != nil {
+						return err
+					}
+				}
 			}
 		}
 	}
+
+	return nil
 }
 
-// parse user-supplied arguments and create Repo list
+func RemoveLabelsFromIssue(gh *github.Client, repo Repo, issue Issue) error {
+	errorFormat := "Cannot remove label for %s: %s"
+
+	id, err := strconv.Atoi(issue.ID)
+	if err != nil {
+		return fmt.Errorf(errorFormat, repo, err)
+	}
+
+	ctx := context.Background()
+	for _, label := range(issue.Labels) {
+		res, err := gh.Issues.RemoveLabelForIssue(ctx, repo.Owner, repo.Name, id, label.Name)
+		if err != nil && res.StatusCode != 404 {
+			return fmt.Errorf(errorFormat, repo, err)
+		}
+	}
+
+	return nil
+}
+
+func ListOpenIssues(gh *github.Client, repo Repo) ([]*github.Issue, error)  {
+	ctx := context.Background()
+	issues, _, err := gh.Issues.ListByRepo(ctx, repo.Owner, repo.Name, &github.IssueListByRepoOptions{State: "open"})
+
+	if err != nil {
+		return nil, fmt.Errorf("Cannot retrieve open issues for %s: %s", repo, err)
+	}
+
+	return issues, nil
+}
+// parse user-supplied arguments and create Repo list containing issues and labels
 func buildRepoList(argv []string) []Repo {
 	var repos []Repo
 	issues := make(map[string][]Label)
@@ -204,40 +254,51 @@ func createLabels(s string) []Label {
 	return labels
 }
 
+// ExitFailure print error to stderr and Exit() with code.
+func ExitFailure(error string, code int)  {
+	fmt.Fprintln(os.Stderr, error)
+	os.Exit(code)
+}
+
 func main() {
 	var auth string
+	var help bool
 
 	flag.Usage = func() {
-		fmt.Fprintln(os.Stderr, usage)
-		os.Exit(2)
+		ExitFailure(usage, 2)
 	}
 
+	flag.BoolVar(&help, "h", false, "")
+	flag.BoolVar(&help, "help", false, "")
 	flag.StringVar(&auth, "a", os.Getenv("BATCHLABELS_AUTH_TOKEN"), "")
 	flag.StringVar(&auth, "auth", os.Getenv("BATCHLABELS_AUTH_TOKEN"), "")
 	flag.Parse()
 
 	// At minimum we need: command label repo
-	if len(flag.Args()) < 3 {
+	if help || len(flag.Args()) < 3 {
 		flag.Usage();
 	}
-
 
 	command := flag.Arg(0)
 	repos := buildRepoList(flag.Args()[1:])
 
 	if len(repos) == 0 {
-		fmt.Fprintln(os.Stderr, "No repository given")
-		os.Exit(2)
+		ExitFailure("No repository given", 2)
 	}
-
 
 	gh := githubClient(auth)
 
 	switch command {
-	case "add":
+	case commandAdd:
 		addLabels(gh, repos)
-	// case "remove":
-	// 	removeLabels(gh, repos)
+	case commandRemove:
+		fmt.Println("Removing labels...")
+		err := RemoveLabels(gh, repos)
+		if err != nil {
+			ExitFailure("Failed to remove labels: " + err.Error(), 3)
+		} else {
+			fmt.Println("Labels successfully removed")
+		}
 	default:
 		flag.Usage()
 	}
