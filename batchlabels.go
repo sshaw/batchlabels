@@ -25,21 +25,21 @@ const (
 	userAgent = "Batch Labels " + version
 )
 
-//    If label contains no issues it will be added to every open issue in its repo
-// or remove
-const usage = `batchlabels [-a auth] command label repo [commandN labelN repoN ...]
+const usage = `batchlabels [h] [-a token] command label repo [commandN labelN repoN ...]
 Add or remove labels in batches to/from GitHub issues and pull requests.
 
 Options
 -a --auth   repository auth token, defaults to the BATCHLABELS_AUTH_TOKEN environment var
+-h --help   print this message
 
 command must be add or remove.
 
-color is the hex color for the issue.
 label can be one of: label, label#color, issue:label#color or issue1,issue2:label1#color,label2#color
+color is the hex color for the label.
+If label contains no issues it will be added or removed to/from every open issue in its repo.
+
 repo must be given in username/reponame format.
 
-If no issues are given the labels are added or removed to/from all open issues.
 `
 
 // Regexp to match repository: username/reponame
@@ -64,20 +64,19 @@ type Repo struct {
 	Issues []Issue
 }
 
-// func (r Repo) String() string {
-// 	var b strings.Builder
-// 	b.WriteString(r.Owner)
+func (r Repo) String() string {
+	var b strings.Builder
+	b.WriteString(r.Owner)
 
-// 	if r.Name != "" {
-// 		b.WriteString("/")
-// 		b.WriteString(r.Name)
-// 	}
+	if r.Name != "" {
+		b.WriteString("/")
+		b.WriteString(r.Name)
+	}
 
-// 	return b.String()
-// }
+	return b.String()
+}
 
-
-func githubClient(auth string) *github.Client {
+func GitHubClient(auth string) *github.Client {
 	gh := github.NewClient(
 		oauth2.NewClient(
 			oauth2.NoContext,
@@ -88,11 +87,14 @@ func githubClient(auth string) *github.Client {
 
 }
 
-func addLabels(gh *github.Client, repos []Repo)  {
+func AddLabels(gh *github.Client, repos []Repo) error {
 	for _, repo := range(repos) {
 		for _, issue := range(repo.Issues) {
 			if issue.ID != allIssues {
-				addLabelToIssue(gh, repo, issue)
+				err := AddLabelsToIssue(gh, repo, issue)
+				if err != nil {
+					return err
+				}
 			} else {
 				issues, err := ListOpenIssues(gh, repo)
 				if err != nil {
@@ -101,17 +103,24 @@ func addLabels(gh *github.Client, repos []Repo)  {
 
 				for _, i := range(issues) {
 					issue.ID = strconv.Itoa(*i.Number)
-					addLabelToIssue(gh, repo, issue)
+					err := AddLabelsToIssue(gh, repo, issue)
+					if err != nil {
+						return err
+					}
 				}
 			}
 		}
 	}
+
+	return nil
 }
 
-func addLabelToIssue(gh *github.Client, repo Repo, issue Issue) {
+func AddLabelsToIssue(gh *github.Client, repo Repo, issue Issue) error {
+	errorFormat := "Cannot add labels to %s: %s"
+
 	id, err := strconv.Atoi(issue.ID)
 	if err != nil {
-		panic(err)
+		return fmt.Errorf(errorFormat, repo, err)
 	}
 
 	var labels []string
@@ -123,7 +132,7 @@ func addLabelToIssue(gh *github.Client, repo Repo, issue Issue) {
 		_, res, err := gh.Issues.CreateLabel(ctx, repo.Owner, repo.Name, label)
 		// Assume 422 means it already exists
 		if err != nil && res.StatusCode != 422 {
-			panic(fmt.Errorf("Cannot create label for %s: %s\n", repo, err))
+			return fmt.Errorf("Cannot create label for %s: %s\n", repo, err)
 		}
 
 		labels = append(labels, labelCfg.Name)
@@ -131,8 +140,10 @@ func addLabelToIssue(gh *github.Client, repo Repo, issue Issue) {
 
 	_, _, err = gh.Issues.AddLabelsToIssue(ctx, repo.Owner, repo.Name, id, labels)
 	if err != nil {
-		panic(fmt.Errorf("Cannot to add labels to %s: %s\n", repo, err))
+		return fmt.Errorf(errorFormat, repo, err)
 	}
+
+	return nil
 }
 
 func RemoveLabels(gh *github.Client, repos []Repo) error {
@@ -192,8 +203,9 @@ func ListOpenIssues(gh *github.Client, repo Repo) ([]*github.Issue, error)  {
 
 	return issues, nil
 }
-// parse user-supplied arguments and create Repo list containing issues and labels
-func buildRepoList(argv []string) []Repo {
+
+// BuildRepoList parse user-supplied arguments and create Repo list containing issues and labels
+func BuildRepoList(argv []string) []Repo {
 	var repos []Repo
 	issues := make(map[string][]Label)
 
@@ -220,11 +232,11 @@ func buildRepoList(argv []string) []Repo {
 		tags := strings.SplitN(argv[i], argIdLabelSep, 2)
 
 		if len(tags) == 1 {
-			labels = createLabels(tags[0])
+			labels = CreateLabels(tags[0])
 			issues[allIssues] = append(issues[allIssues], labels...)
 		} else {
 			ids := strings.Split(tags[0], argListSep)
-			labels = createLabels(tags[1])
+			labels = CreateLabels(tags[1])
 
 			for _, id := range(ids) {
 				issues[id] = append(issues[id], labels...)
@@ -237,7 +249,7 @@ func buildRepoList(argv []string) []Repo {
 	return repos
 }
 
-func createLabels(s string) []Label {
+func CreateLabels(s string) []Label {
 	var labels []Label
 	labelCfg := strings.Split(s, argListSep)
 
@@ -280,17 +292,23 @@ func main() {
 	}
 
 	command := flag.Arg(0)
-	repos := buildRepoList(flag.Args()[1:])
+	repos := BuildRepoList(flag.Args()[1:])
 
 	if len(repos) == 0 {
 		ExitFailure("No repository given", 2)
 	}
 
-	gh := githubClient(auth)
+	gh := GitHubClient(auth)
 
 	switch command {
 	case commandAdd:
-		addLabels(gh, repos)
+		fmt.Println("Adding labels...")
+		err := AddLabels(gh, repos)
+		if err != nil {
+			ExitFailure("Failed to add labels: " + err.Error(), 3)
+		} else {
+			fmt.Println("Labels successfully added")
+		}
 	case commandRemove:
 		fmt.Println("Removing labels...")
 		err := RemoveLabels(gh, repos)

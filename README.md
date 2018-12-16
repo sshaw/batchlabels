@@ -8,19 +8,20 @@ Add or remove labels in batches to/from GitHub issues and pull requests.
 
 ## Usage
 
-    batchlabels [-a auth] command label repo [commandN labelN repoN ...]
+    batchlabels [h] [-a token] command label repo [commandN labelN repoN ...]
     Add or remove labels in batches to/from GitHub issues and pull requests.
 
     Options
     -a --auth   repository auth token, defaults to the BATCHLABELS_AUTH_TOKEN environment var
+    -h --help   print this message
 
     command must be add or remove
 
-    color is the hex color for the issue.
     label can be one of: label, label#color, issue:label#color or issue1,issue2:label1#color,label2#color
-    repo must be given in username/reponame format.
+    color is the hex color for the label.
+    If label contains no issues it will be added or removed to/from every open issue in its repo.
 
-    If no issues are given the labels are added or removed to/from all open issues.
+    repo must be given in username/reponame format.
 
 ## See Also
 
