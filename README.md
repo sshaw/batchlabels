@@ -20,6 +20,10 @@ Add/remove labels in batches to/from GitHub issues and pull requests.
     label can be one of: label, label#color, issue:label#color or issue1,issue2:label1#color,label2#color
     repo must be given in username/reponame format
 
+## See Also
+
+- [Export Pull Requests](https://github.com/sshaw/export-pull-requests) - Export pull requests and/or issues to a CSV file
+
 ## TODO
 
 GitLab! (But first check to make sure they don't already support doing it.)
