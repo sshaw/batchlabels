@@ -29,8 +29,10 @@ const usage = `batchlabels [h] [-a token] command label repo [commandN labelN re
 Add or remove labels in batches to/from GitHub issues and pull requests.
 
 Options
--a --auth   repository auth token, defaults to the BATCHLABELS_AUTH_TOKEN environment var
--h --help   print this message
+-a --auth token     repository auth token, defaults to the BATCHLABELS_AUTH_TOKEN environment var
+-h --help           print this message
+--hacktoberfest     add "hacktoberfest" labels to all open issues in the given repo
+-v --version        print the version
 
 command must be add or remove.
 
@@ -44,6 +46,7 @@ repo must be given in username/reponame format.
 
 // Regexp to match repository: username/reponame
 var repoRegexp = regexp.MustCompile(`^([^/]+)/([^/]+)$`)
+var hacktoberfestIssue = Issue{ ID: allIssues, Labels: []Label{ Label{Color: "ff9a56", Name:"hacktoberfest"} } }
 
 // Issue Label
 type Label struct {
@@ -98,7 +101,7 @@ func AddLabels(gh *github.Client, repos []Repo) error {
 			} else {
 				issues, err := ListOpenIssues(gh, repo)
 				if err != nil {
-					panic(err)
+					return fmt.Errorf("Cannot find open issues for %s: %s", repo, err)
 				}
 
 				for _, i := range(issues) {
@@ -267,35 +270,51 @@ func CreateLabels(s string) []Label {
 }
 
 // ExitFailure print error to stderr and Exit() with code.
-func ExitFailure(error string, code int)  {
+func ExitFailure(error string, code int) {
 	fmt.Fprintln(os.Stderr, error)
 	os.Exit(code)
 }
 
 func main() {
 	var auth string
-	var help bool
+	var showHelp, showVersion, hacktoberfest bool
 
 	flag.Usage = func() {
 		ExitFailure(usage, 2)
 	}
 
-	flag.BoolVar(&help, "h", false, "")
-	flag.BoolVar(&help, "help", false, "")
+	flag.BoolVar(&showHelp, "h", false, "")
+	flag.BoolVar(&showHelp, "help", false, "")
+	flag.BoolVar(&hacktoberfest, "hacktoberfest", false, "")
+	flag.BoolVar(&showVersion, "v", false, "")
+	flag.BoolVar(&showVersion, "version", false, "")
 	flag.StringVar(&auth, "a", os.Getenv("BATCHLABELS_AUTH_TOKEN"), "")
 	flag.StringVar(&auth, "auth", os.Getenv("BATCHLABELS_AUTH_TOKEN"), "")
 	flag.Parse()
 
-	// At minimum we need: command label repo
-	if help || len(flag.Args()) < 3 {
+	if showVersion {
+		fmt.Println(version);
+		os.Exit(0)
+	}
+
+	argv := flag.Args()
+
+	// We need: command label repo or, if hacktoberfest: command repo
+	if showHelp || !hacktoberfest && len(argv) < 3 || hacktoberfest && len(argv) < 2 {
 		flag.Usage();
 	}
 
-	command := flag.Arg(0)
-	repos := BuildRepoList(flag.Args()[1:])
+	command := argv[0]
+	repos := BuildRepoList(argv[1:])
 
 	if len(repos) == 0 {
 		ExitFailure("No repository given", 2)
+	}
+
+	if hacktoberfest {
+		for i := 0; i < len(repos); i++ {
+			repos[i].Issues = append(repos[i].Issues, hacktoberfestIssue)
+		}
 	}
 
 	gh := GitHubClient(auth)

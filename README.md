@@ -12,8 +12,10 @@ Add or remove labels in batches to/from GitHub issues and pull requests.
     Add or remove labels in batches to/from GitHub issues and pull requests.
 
     Options
-    -a --auth   repository auth token, defaults to the BATCHLABELS_AUTH_TOKEN environment var
-    -h --help   print this message
+    -a --auth token  repository auth token, defaults to the BATCHLABELS_AUTH_TOKEN environment var
+    -h --help        print this message
+    --hacktoberfest  add "hacktoberfest" labels to all open issues in the given repo
+    -v --version     print the version
 
     command must be add or remove
 
@@ -22,6 +24,12 @@ Add or remove labels in batches to/from GitHub issues and pull requests.
     If label contains no issues it will be added or removed to/from every open issue in its repo.
 
     repo must be given in username/reponame format.
+
+## [Hacktoberfest](https://hacktoberfest.digitalocean.com/)
+
+Use the `--hacktoberfest` option to add a `#ff9a56` `hacktoberfest` label to all your open issues and pull requests.
+
+This works with both `add` and `delete` commands and can be used in conjunction with normal label arguments.
 
 ## See Also
 
