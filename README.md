@@ -4,7 +4,15 @@ Add or remove labels in batches to/from GitHub issues and pull requests.
 
 ## Installation
 
-...
+Download the binary for your platform:
+
+* [Linux x86-64](https://github.com/sshaw/batchlabels/releases/download/v0.0.1/batchlabels-linux-x86-64)
+* [Mac](https://github.com/sshaw/batchlabels/releases/download/v0.0.1/batchlabels-mac)
+* Windows TODO
+
+Otherwise, [install Go](https://golang.org/dl/), and run `go get github.com/sshaw/batchlabels/...`
+And put `$GOPATH/bin` (assuming `GOPATH` has one path) in your `PATH`.
+
 
 ## Usage
 
