@@ -40,9 +40,50 @@ And put `$GOPATH/bin` (assuming `GOPATH` has one path) in your `PATH`.
 
 ## [Hacktoberfest](https://hacktoberfest.digitalocean.com/)
 
-Use the `--hacktoberfest` option to add a `#ff9a56` `hacktoberfest` label to all your open issues and pull requests.
+Use the `--hacktoberfest` option to add an `hacktoberfest` label with the color `#ff9a56` to the specified issues
+and pull requests or, if none are given, all open issues and pull requests.
 
-This works with both `add` and `delete` commands and can be used in conjunction with normal label arguments.
+This works with both `add` and `delete` commands and can also be used in conjunction with normal label arguments.
+See [Examples](#Examples).
+
+## Examples
+
+Add the labels `foo` and `bar` to all open issues and pull requests in repository `sshaw/git-link`:
+
+    batchlabels add foo bar sshaw/git-link
+
+Remove the labels `foo` and `bar` from all open issues and pull requests in repository `sshaw/git-link`:
+
+    batchlabels remove foo bar sshaw/git-link
+
+Add the label `foo` with the color `#de5833` to all open issues and pull requests in repository `sshaw/git-link`:
+
+    batchlabels add foo#de5833 sshaw/git-link
+
+Add the label `foo` with the color `#de5833` to issue `44` in repository `sshaw/git-link`:
+
+    batchlabels add 44:foo#de5833 sshaw/git-link
+
+Add the label `foo` with color `#ccc` and label `bar` with color `#fff` to issues `12` and `27` in repository `sshaw/git-link`:
+
+    batchlabels add 12,27:foo#ccc,bar:#fff sshaw/git-link
+
+Remove the labels `foo` from issues `44` and `12` in repository `sshaw/git-link`:
+
+    batchlabels remove 12,44:foo sshaw/git-link
+
+Add the `hacktoberfest` label with color `#ff9a56` to all open issues and pull requests in repository `sshaw/git-link`:
+
+    batchlabels --hacktoberfest add sshaw/git-link
+
+Add the `hacktoberfest` label with color `#ff9a56` to issues `44` and `12` in repository `sshaw/git-link`:
+
+    batchlabels --hacktoberfest add 44,12 sshaw/git-link
+
+Add the `hacktoberfest` label with color `#ff9a56` to all open issues/PRs in repository   `sshaw/git-link`.
+In addition, add the label `foo` with the color `#de5833` to issue `44`
+
+    batchlabels --hacktoberfest add 44:foo#de5833 sshaw/git-link
 
 ## See Also
 

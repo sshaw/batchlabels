@@ -29,11 +29,10 @@ const usage = `batchlabels [hv] [-a token] [--hacktoberfest] command label repo 
 Add or remove labels in batches to/from GitHub issues and pull requests.
 
 Options
--a --auth token  repository auth token, defaults to the BATCHLABELS_AUTH_TOKEN
-                 environment var
+-a --auth token  repository auth token, defaults to the BATCHLABELS_AUTH_TOKEN environment var
 -h --help        print this message
---hacktoberfest  add "hacktoberfest" labels to the given IDs or, if none are given,
-                 to all open issues in the given repository
+--hacktoberfest  add "hacktoberfest" labels to the given IDs or, if none are given, to all
+                 open issues in the given repository
 -v --version     print the version
 
 command must be add or remove.
@@ -46,6 +45,8 @@ color is the hex color for the label.
 If label contains no issues it will be added or removed to/from every open issue in the repo(s).
 
 repo must be given in username/reponame format.
+
+For usage examples see: https://github.com/sshaw/batchlabels
 
 `
 
