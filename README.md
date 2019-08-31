@@ -6,9 +6,9 @@ Add or remove labels in batches to/from GitHub issues and pull requests.
 
 Download the binary for your platform:
 
-* [Linux x86-64](https://github.com/sshaw/batchlabels/releases/download/v0.0.1/batchlabels-linux-x86-64)
-* [Mac](https://github.com/sshaw/batchlabels/releases/download/v0.0.1/batchlabels-mac)
-* [Windows](https://github.com/sshaw/batchlabels/releases/download/v0.0.1/batchlabels.exe)
+* [Linux x86-64](https://github.com/sshaw/batchlabels/releases/download/v0.1.0/batchlabels-linux-x86-64)
+* [Mac](https://github.com/sshaw/batchlabels/releases/download/v0.1.0/batchlabels-mac)
+* [Windows](https://github.com/sshaw/batchlabels/releases/download/v0.1.0/batchlabels.exe)
 
 Otherwise, [install Go](https://golang.org/dl/), and run `go get github.com/sshaw/batchlabels/...`
 
@@ -20,10 +20,10 @@ Otherwise, [install Go](https://golang.org/dl/), and run `go get github.com/ssha
     Options
     -a --auth token    repository auth token, defaults to the BATCHLABELS_AUTH_TOKEN environment var
     -h --help          print this message
-    --hacktoberfest    add "hacktoberfest" labels to the given IDs or, if none are given, to all
-                       open issues (not pull requests) in the given repository
-    -i --issues        If no label IDs are given only apply labels to issues and not pull requests
-    -p --pull-requests If no label IDs are given only apply labels to pull requests
+    --hacktoberfest    add "hacktoberfest" labels to the given IDs (see label below) or, if none are given,
+                       to all open issues (not pull requests) in the given repository
+    -i --issues        Only apply labels to issues and not pull requests
+    -p --pull-requests Only apply labels to pull requests
     -v --version       print the version
 
     command must be add or remove.

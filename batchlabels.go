@@ -17,6 +17,7 @@ const (
 	argIdLabelSep = ":"
 	argColorSep = "#"
 	allIssues = "__ALL__"
+	openIssue = "open"
 
 	commandAdd = "add"
 	commandRemove = "remove"
@@ -25,22 +26,22 @@ const (
 	userAgent = "Batch Labels " + version
 )
 
-const usage = `batchlabels [hv] [-a token] [--hacktoberfest] command label repo [repoN ...]
+const usage = `batchlabels [hipv] [-a token] [--hacktoberfest] command label repo [repoN ...]
 Add or remove labels in batches to/from GitHub issues and pull requests.
 
 Options
 -a --auth token    repository auth token, defaults to the BATCHLABELS_AUTH_TOKEN environment var
 -h --help          print this message
---hacktoberfest    add "hacktoberfest" labels to the given IDs or, if none are given, to all
-                   open issues (not pull requests) in the given repository
--i --issues        If no label IDs are given only apply labels to issues and not pull requests
--p --pull-requests If no label IDs are given only apply labels to pull requests
+--hacktoberfest    add "hacktoberfest" labels to the given IDs (see label below) or, if none are given,
+                   to all open issues (not pull requests) in the given repository
+-i --issues        Only apply labels to issues and not pull requests
+-p --pull-requests Only apply labels to pull requests
 -v --version       print the version
 
 command must be add or remove.
 
 label can be one of: label, label#color, issue:label#color or issue1,issue2:labelA#color,labelB#color
-When --hacktoberfest is provided and label is an integer or list of integers they are
+When --hacktoberfest is provided and label is an integer or list of integers labels are
 treated as issue IDs for which the hacktoberfest label will be applied.
 
 color is the hex color for the label.
@@ -49,7 +50,6 @@ If label contains no issues it will be added or removed to/from every open issue
 repo must be given in username/reponame format.
 
 For usage examples see: https://github.com/sshaw/batchlabels
-
 `
 
 // Regexp to match repository: username/reponame
@@ -217,7 +217,7 @@ func RemoveLabelsFromIssue(gh *github.Client, repo Repo, issue Issue) error {
 
 func ListOpenIssues(gh *github.Client, repo Repo) ([]*github.Issue, error)  {
 	ctx := context.Background()
-	issues, _, err := gh.Issues.ListByRepo(ctx, repo.Owner, repo.Name, &github.IssueListByRepoOptions{State: "open"})
+	issues, _, err := gh.Issues.ListByRepo(ctx, repo.Owner, repo.Name, &github.IssueListByRepoOptions{State: openIssue})
 
 	if err != nil {
 		return nil, fmt.Errorf("Cannot retrieve open issues for %s: %s", repo, err)
@@ -390,6 +390,9 @@ func main() {
 	if hacktoberfest {
 		addHacktoberfestIssues(repos)
 	}
+
+	// fmt.Printf("%#v\n", repos)
+	// os.Exit(0);
 
 	gh := GitHubClient(auth)
 
