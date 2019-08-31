@@ -21,24 +21,29 @@ const (
 	commandAdd = "add"
 	commandRemove = "remove"
 
-	version = "v0.0.1"
+	version = "v0.1.0"
 	userAgent = "Batch Labels " + version
 )
 
-const usage = `batchlabels [h] [-a token] command label repo [commandN labelN repoN ...]
+const usage = `batchlabels [hv] [-a token] [--hacktoberfest] command label repo [repoN ...]
 Add or remove labels in batches to/from GitHub issues and pull requests.
 
 Options
--a --auth token     repository auth token, defaults to the BATCHLABELS_AUTH_TOKEN environment var
--h --help           print this message
---hacktoberfest     add "hacktoberfest" labels to all open issues in the given repo
--v --version        print the version
+-a --auth token  repository auth token, defaults to the BATCHLABELS_AUTH_TOKEN
+                 environment var
+-h --help        print this message
+--hacktoberfest  add "hacktoberfest" labels to the given IDs or, if none are given,
+                 to all open issues in the given repository
+-v --version     print the version
 
 command must be add or remove.
 
-label can be one of: label, label#color, issue:label#color or issue1,issue2:label1#color,label2#color
+label can be one of: label, label#color, issue:label#color or issue1,issue2:labelA#color,labelB#color
+When --hacktoberfest is provided and label is an integer or list of integers they are
+treated as issue IDs for which the hacktoberfest label will be applied.
+
 color is the hex color for the label.
-If label contains no issues it will be added or removed to/from every open issue in its repo.
+If label contains no issues it will be added or removed to/from every open issue in the repo(s).
 
 repo must be given in username/reponame format.
 
@@ -46,7 +51,8 @@ repo must be given in username/reponame format.
 
 // Regexp to match repository: username/reponame
 var repoRegexp = regexp.MustCompile(`^([^/]+)/([^/]+)$`)
-var hacktoberfestIssue = Issue{ ID: allIssues, Labels: []Label{ Label{Color: "ff9a56", Name:"hacktoberfest"} } }
+var hacktoberfestLabel = Label{Color: "ff9a56", Name: "hacktoberfest"}
+var hacktoberfestIssue = Issue{ID: allIssues, Labels: []Label{ hacktoberfestLabel }}
 
 // Issue Label
 type Label struct {
@@ -275,6 +281,51 @@ func ExitFailure(error string, code int) {
 	os.Exit(code)
 }
 
+// issuesHaveOnlyIDLabel used with hacktoberfest option to determine
+// if the label arguments are just IDs or true labels.
+func issuesHaveOnlyIDLabel(issues []Issue) bool {
+	for _, issue := range issues {
+		// If we have an actual ID then it's not an ID label
+		if issue.ID != allIssues {
+			return false
+		}
+
+		for _, label := range issue.Labels {
+			match, _ := regexp.MatchString(`^\d+$`, label.Name)
+			// If it's not an integer or there's a color then not an ID label
+			if !match || len(label.Color) > 0 {
+				return false
+			}
+		}
+	}
+
+	return true
+}
+
+// convertIDLabelsToHacktoberfestIssues convert issues that are parsed as labels to Hacktoberfest issues
+func convertIDLabelsToHacktoberfestIssues(repo *Repo) {
+	var hacktoberfestIssues []Issue
+
+	for _, issue := range repo.Issues {
+		for _, label := range issue.Labels {
+			newIssue := Issue{ID: label.Name, Labels: []Label{ hacktoberfestLabel }}
+			hacktoberfestIssues = append(hacktoberfestIssues, newIssue)
+		}
+	}
+
+	repo.Issues = hacktoberfestIssues;
+}
+
+func addHacktoberfestIssues(repos []Repo) {
+	for i := range repos {
+		if issuesHaveOnlyIDLabel(repos[i].Issues) {
+			convertIDLabelsToHacktoberfestIssues(&repos[i])
+		} else {
+			repos[i].Issues = append(repos[i].Issues, hacktoberfestIssue)
+		}
+	}
+}
+
 func main() {
 	var auth string
 	var showHelp, showVersion, hacktoberfest bool
@@ -312,9 +363,7 @@ func main() {
 	}
 
 	if hacktoberfest {
-		for i := 0; i < len(repos); i++ {
-			repos[i].Issues = append(repos[i].Issues, hacktoberfestIssue)
-		}
+		addHacktoberfestIssues(repos)
 	}
 
 	gh := GitHubClient(auth)

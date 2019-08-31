@@ -16,20 +16,25 @@ And put `$GOPATH/bin` (assuming `GOPATH` has one path) in your `PATH`.
 
 ## Usage
 
-    batchlabels [h] [-a token] command label repo [commandN labelN repoN ...]
+    batchlabels [hv] [-a token] [--hacktoberfest] command label repo [repoN ...]
     Add or remove labels in batches to/from GitHub issues and pull requests.
 
     Options
-    -a --auth token  repository auth token, defaults to the BATCHLABELS_AUTH_TOKEN environment var
+    -a --auth token  repository auth token, defaults to the BATCHLABELS_AUTH_TOKEN
+                     environment var
     -h --help        print this message
-    --hacktoberfest  add "hacktoberfest" labels to all open issues in the given repo
+    --hacktoberfest  add "hacktoberfest" labels to the given IDs or, if none are given,
+                     to all open issues in the given repository
     -v --version     print the version
 
-    command must be add or remove
+    command must be add or remove.
 
-    label can be one of: label, label#color, issue:label#color or issue1,issue2:label1#color,label2#color
+    label can be one of: label, label#color, issue:label#color or issue1,issue2:labelA#color,labelB#color
+    When --hacktoberfest is provided and label is an integer or list of integers they are
+    treated as issue IDs for which the hacktoberfest label will be applied.
+
     color is the hex color for the label.
-    If label contains no issues it will be added or removed to/from every open issue in its repo.
+    If label contains no issues it will be added or removed to/from every open issue in the repo(s).
 
     repo must be given in username/reponame format.
 
