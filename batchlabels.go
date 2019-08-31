@@ -284,6 +284,10 @@ func ExitFailure(error string, code int) {
 // issuesHaveOnlyIDLabel used with hacktoberfest option to determine
 // if the label arguments are just IDs or true labels.
 func issuesHaveOnlyIDLabel(issues []Issue) bool {
+	if(len(issues) == 0) {
+		return false
+	}
+
 	for _, issue := range issues {
 		// If we have an actual ID then it's not an ID label
 		if issue.ID != allIssues {
