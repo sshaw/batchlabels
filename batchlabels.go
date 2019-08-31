@@ -29,11 +29,13 @@ const usage = `batchlabels [hv] [-a token] [--hacktoberfest] command label repo 
 Add or remove labels in batches to/from GitHub issues and pull requests.
 
 Options
--a --auth token  repository auth token, defaults to the BATCHLABELS_AUTH_TOKEN environment var
--h --help        print this message
---hacktoberfest  add "hacktoberfest" labels to the given IDs or, if none are given, to all
-                 open issues in the given repository
--v --version     print the version
+-a --auth token    repository auth token, defaults to the BATCHLABELS_AUTH_TOKEN environment var
+-h --help          print this message
+--hacktoberfest    add "hacktoberfest" labels to the given IDs or, if none are given, to all
+                   open issues (not pull requests) in the given repository
+-i --issues        If no label IDs are given only apply labels to issues and not pull requests
+-p --pull-requests If no label IDs are given only apply labels to pull requests
+-v --version       print the version
 
 command must be add or remove.
 
@@ -54,6 +56,8 @@ For usage examples see: https://github.com/sshaw/batchlabels
 var repoRegexp = regexp.MustCompile(`^([^/]+)/([^/]+)$`)
 var hacktoberfestLabel = Label{Color: "ff9a56", Name: "hacktoberfest"}
 var hacktoberfestIssue = Issue{ID: allIssues, Labels: []Label{ hacktoberfestLabel }}
+
+var hacktoberfest, onlyIssues, onlyPRs bool
 
 // Issue Label
 type Label struct {
@@ -112,6 +116,10 @@ func AddLabels(gh *github.Client, repos []Repo) error {
 				}
 
 				for _, i := range(issues) {
+					if ignoreIssue(i) {
+						continue
+					}
+
 					issue.ID = strconv.Itoa(*i.Number)
 					err := AddLabelsToIssue(gh, repo, issue)
 					if err != nil {
@@ -171,6 +179,10 @@ func RemoveLabels(gh *github.Client, repos []Repo) error {
 				}
 
 				for _, i := range(issues) {
+					if ignoreIssue(i) {
+						continue;
+					}
+
 					issue.ID = strconv.Itoa(*i.Number)
 					err := RemoveLabelsFromIssue(gh, repo, issue)
 					if err != nil {
@@ -331,9 +343,13 @@ func addHacktoberfestIssues(repos []Repo) {
 	}
 }
 
+func ignoreIssue(issue *github.Issue) bool {
+	return (onlyIssues || (hacktoberfest && !onlyPRs)) && issue.PullRequestLinks != nil || onlyPRs && issue.PullRequestLinks == nil;
+}
+
 func main() {
 	var auth string
-	var showHelp, showVersion, hacktoberfest bool
+	var showHelp, showVersion  bool
 
 	flag.Usage = func() {
 		ExitFailure(usage, 2)
@@ -342,6 +358,10 @@ func main() {
 	flag.BoolVar(&showHelp, "h", false, "")
 	flag.BoolVar(&showHelp, "help", false, "")
 	flag.BoolVar(&hacktoberfest, "hacktoberfest", false, "")
+	flag.BoolVar(&onlyIssues, "i", false, "")
+	flag.BoolVar(&onlyIssues, "issues", false, "")
+	flag.BoolVar(&onlyPRs, "p", false, "")
+	flag.BoolVar(&onlyPRs, "pull-requests", false, "")
 	flag.BoolVar(&showVersion, "v", false, "")
 	flag.BoolVar(&showVersion, "version", false, "")
 	flag.StringVar(&auth, "a", os.Getenv("BATCHLABELS_AUTH_TOKEN"), "")

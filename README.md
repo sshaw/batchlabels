@@ -16,16 +16,17 @@ And put `$GOPATH/bin` (assuming `GOPATH` has one path) in your `PATH`.
 
 ## Usage
 
-    batchlabels [hv] [-a token] [--hacktoberfest] command label repo [repoN ...]
+    batchlabels [hipv] [-a token] [--hacktoberfest] command label repo [repoN ...]
     Add or remove labels in batches to/from GitHub issues and pull requests.
 
     Options
-    -a --auth token  repository auth token, defaults to the BATCHLABELS_AUTH_TOKEN
-                     environment var
-    -h --help        print this message
-    --hacktoberfest  add "hacktoberfest" labels to the given IDs or, if none are given,
-                     to all open issues in the given repository
-    -v --version     print the version
+    -a --auth token    repository auth token, defaults to the BATCHLABELS_AUTH_TOKEN environment var
+    -h --help          print this message
+    --hacktoberfest    add "hacktoberfest" labels to the given IDs or, if none are given, to all
+                       open issues (not pull requests) in the given repository
+    -i --issues        If no label IDs are given only apply labels to issues and not pull requests
+    -p --pull-requests If no label IDs are given only apply labels to pull requests
+    -v --version       print the version
 
     command must be add or remove.
 
@@ -41,7 +42,7 @@ And put `$GOPATH/bin` (assuming `GOPATH` has one path) in your `PATH`.
 ## [Hacktoberfest](https://hacktoberfest.digitalocean.com/)
 
 Use the `--hacktoberfest` option to add an `hacktoberfest` label with the color `#ff9a56` to the specified issues
-and pull requests or, if none are given, all open issues and pull requests.
+or, if none are given, all open issues.
 
 This works with both `add` and `delete` commands and can also be used in conjunction with normal label arguments.
 See [Examples](#Examples).
@@ -56,9 +57,13 @@ Remove the labels `foo` and `bar` from all open issues and pull requests in repo
 
     batchlabels remove foo bar sshaw/git-link
 
-Add the label `foo` with the color `#de5833` to all open issues and pull requests in repository `sshaw/git-link`:
+Add the labels `foo` and `bar` only to open pull requests in repository `sshaw/git-link`:
 
-    batchlabels add foo#de5833 sshaw/git-link
+    batchlabels add -p foo bar sshaw/git-link
+
+Add the label `foo` with the color `#de5833` only to open pull requests in repository `sshaw/git-link`:
+
+    batchlabels -p add foo#de5833 sshaw/git-link
 
 Add the label `foo` with the color `#de5833` to issue `44` in repository `sshaw/git-link`:
 
@@ -72,11 +77,11 @@ Remove the labels `foo` from issues `44` and `12` in repository `sshaw/git-link`
 
     batchlabels remove 12,44:foo sshaw/git-link
 
-Add the `hacktoberfest` label with color `#ff9a56` to all open issues and pull requests in repository `sshaw/git-link`:
+Add the `hacktoberfest` label with color `#ff9a56` to all open issues in repository `sshaw/git-link`:
 
     batchlabels --hacktoberfest add sshaw/git-link
 
-Add the `hacktoberfest` label with color `#ff9a56` to issues `44` and `12` in repository `sshaw/git-link`:
+Add the `hacktoberfest` label with color `#ff9a56` to pull requests `44` and `12` in repository `sshaw/git-link`:
 
     batchlabels --hacktoberfest add 44,12 sshaw/git-link
 
