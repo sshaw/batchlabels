@@ -11,8 +11,6 @@ Download the binary for your platform:
 * [Windows](https://github.com/sshaw/batchlabels/releases/download/v0.0.1/batchlabels.exe)
 
 Otherwise, [install Go](https://golang.org/dl/), and run `go get github.com/sshaw/batchlabels/...`
-And put `$GOPATH/bin` (assuming `GOPATH` has one path) in your `PATH`.
-
 
 ## Usage
 
@@ -42,7 +40,7 @@ And put `$GOPATH/bin` (assuming `GOPATH` has one path) in your `PATH`.
 ## [Hacktoberfest](https://hacktoberfest.digitalocean.com/)
 
 Use the `--hacktoberfest` option to add an `hacktoberfest` label with the color `#ff9a56` to the specified issues
-or, if none are given, all open issues.
+or, if none are given, all open issues (not pull requests).
 
 This works with both `add` and `delete` commands and can also be used in conjunction with normal label arguments.
 See [Examples](#Examples).
@@ -57,13 +55,13 @@ Remove the labels `foo` and `bar` from all open issues and pull requests in repo
 
     batchlabels remove foo bar sshaw/git-link
 
-Add the labels `foo` and `bar` only to open pull requests in repository `sshaw/git-link`:
+Add the labels `foo` and `bar` only to open issues in repository `sshaw/git-link`:
 
-    batchlabels add -p foo bar sshaw/git-link
+    batchlabels -i add foo bar sshaw/git-link
 
-Add the label `foo` with the color `#de5833` only to open pull requests in repository `sshaw/git-link`:
+Add the label `foo` with the color `#de5833` only to open issues in repository `sshaw/git-link`:
 
-    batchlabels -p add foo#de5833 sshaw/git-link
+    batchlabels -i add foo#de5833 sshaw/git-link
 
 Add the label `foo` with the color `#de5833` to issue `44` in repository `sshaw/git-link`:
 
@@ -85,7 +83,7 @@ Add the `hacktoberfest` label with color `#ff9a56` to pull requests `44` and `12
 
     batchlabels --hacktoberfest add 44,12 sshaw/git-link
 
-Add the `hacktoberfest` label with color `#ff9a56` to all open issues/PRs in repository   `sshaw/git-link`.
+Add the `hacktoberfest` label with color `#ff9a56` to all open issues in repository `sshaw/git-link`.
 In addition, add the label `foo` with the color `#de5833` to issue `44`
 
     batchlabels --hacktoberfest add 44:foo#de5833 sshaw/git-link
