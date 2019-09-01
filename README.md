@@ -11,6 +11,7 @@ Download the binary for your platform:
 * [Windows](https://github.com/sshaw/batchlabels/releases/download/v0.1.0/batchlabels.exe)
 
 Otherwise, [install Go](https://golang.org/dl/), and run `go get github.com/sshaw/batchlabels/...`
+and put `$GOPATH/bin` (assuming `GOPATH` has one path) in your `PATH`.
 
 ## Usage
 
