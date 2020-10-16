@@ -13,6 +13,8 @@ Download the binary for your platform:
 Otherwise, [install Go](https://golang.org/dl/), and run `go get github.com/sshaw/batchlabels/...`
 and put `$GOPATH/bin` (assuming `GOPATH` has one path) in your `PATH`.
 
+An [Auth token from GitHub](https://docs.github.com/en/free-pro-team@latest/github/authenticating-to-github/creating-a-personal-access-token) with repository access will need to be generated. To use, pass the token with the flag `-a` when using batchlables or store it in `BATCHLABELS_AUTH_TOKEN` environment variable.
+
 ## Usage
 
     batchlabels [hipv] [-a token] [--hacktoberfest] command label repo [repoN ...]
@@ -59,6 +61,10 @@ Remove the labels `foo` and `bar` from all open issues and pull requests in repo
 Add the labels `foo` and `bar` only to open issues in repository `sshaw/git-link`:
 
     batchlabels -i add foo bar sshaw/git-link
+
+To add labels having more than one word, use backslash `\` to escape spaces. Example below will add `good first issue` to all open issues in the repository `sshaw/git-link:
+
+    batchlabels -i add good\ first\ issue sshaw/git-link
 
 Add the label `foo` with the color `#de5833` only to open issues in repository `sshaw/git-link`:
 
